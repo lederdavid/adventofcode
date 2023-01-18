@@ -241,8 +241,41 @@ def day5_part2():
     print(''.join(stack.pop() for stack in list_of_stacks))
 
 
+def all_characters_different_in_array(array):
+    for i in range(len(array) - 1):
+        if array[i] in array[i + 1:]:
+            return False
+    return True
+
+
+def day6_part1():
+    line = get_lines_from_file("day6_input.txt")[0]
+    array = ['*', '*', '*', '*']
+    index_of_array = 0
+    for i in range(len(line)):
+        array[index_of_array] = line[i]
+        if '*' not in array and all_characters_different_in_array(array):
+            print(i + 1)
+            exit(0)
+        index_of_array = (index_of_array + 1) % 4
+    print("Read entire input " + str(len(line)))
+
+
+def day6_part2():
+    line = get_lines_from_file("day6_input.txt")[0]
+    array = ['*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*', '*']
+    index_of_array = 0
+    for i in range(len(line)):
+        array[index_of_array] = line[i]
+        if '*' not in array and all_characters_different_in_array(array):
+            print(i + 1)
+            exit(0)
+        index_of_array = (index_of_array + 1) % 14
+    print("Read entire input " + str(len(line)))
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    day5_part2()
+    day6_part2()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
