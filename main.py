@@ -1,5 +1,6 @@
 # This is a sample Python script.
 
+
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
@@ -274,8 +275,156 @@ def day6_part2():
     print("Read entire input " + str(len(line)))
 
 
+def add_to_dir_size(stack_of_dirs, size):
+    containing_dir = stack_of_dirs.pop()
+    containing_dir[1] = containing_dir[1] + size
+    stack_of_dirs.append(containing_dir)
+
+
+def remove_dir_from_stack(stack_of_dirs, saved_dirs, condition, num):
+    size = 0
+    removed_dir = stack_of_dirs.pop()
+    dir_size = int(removed_dir[1])
+    if condition(dir_size, num):
+        saved_dirs.append(removed_dir)
+        size = dir_size
+    add_to_dir_size(stack_of_dirs, dir_size)
+    return size
+
+
+def less_than(a, b):
+    return a < b
+
+
+def more_than(a, b):
+    return a > b
+
+
+def day7_part1():
+    lines = get_lines_from_file("day7_input.txt")
+    saved_dirs = []
+    stack_of_dirs = []
+    sum_of_dir_sizes = 0
+
+    for line in lines:
+        words = line.split()
+        if words[0] == '$':  # command
+            if words[1] == 'cd':
+                current_dir = words[2]
+                if current_dir != "..":
+                    stack_of_dirs.append([current_dir, 0])
+                else:
+                    sum_of_dir_sizes += remove_dir_from_stack(stack_of_dirs, saved_dirs, less_than, 100000)
+
+        elif words[0].isnumeric():  # regular file
+            add_to_dir_size(stack_of_dirs, int(words[0]))
+
+    while len(stack_of_dirs) > 1:
+        sum_of_dir_sizes += remove_dir_from_stack(stack_of_dirs, saved_dirs, less_than, 100000)
+
+    print(sum_of_dir_sizes)
+    print(stack_of_dirs[0][1])
+
+
+def find_smallest_dir(stack_of_dirs):
+    min_size = 70000000
+    min_dir = None
+    for directory in stack_of_dirs:
+        if int(directory[1]) < min_size:
+            min_size = int(directory[1])
+            min_dir = directory
+    return min_dir
+
+
+def day7_part2():
+    lines = get_lines_from_file("day7_input.txt")
+    saved_dirs = []
+    stack_of_dirs = []
+
+    for line in lines:
+        words = line.split()
+        if words[0] == '$':  # command
+            if words[1] == 'cd':
+                current_dir = words[2]
+                if current_dir != "..":
+                    stack_of_dirs.append([current_dir, 0])
+                else:
+                    remove_dir_from_stack(stack_of_dirs, saved_dirs, more_than, 2677139)
+
+        elif words[0].isnumeric():  # regular file
+            add_to_dir_size(stack_of_dirs, int(words[0]))
+
+    while len(stack_of_dirs) > 1:
+        remove_dir_from_stack(stack_of_dirs, saved_dirs, more_than, 2677139)
+
+    print(find_smallest_dir(saved_dirs))
+
+
+def larger_than_left_side(line, j):
+    count = 0
+    for i in reversed(range(j)):
+        count += 1
+        if int(line[i]) >= int(line[j]):
+            return False, count
+    return True, count
+
+
+def larger_than_right_side(line, j):
+    count = 0
+    for i in range(j + 1, len(line)):
+        count += 1
+        if int(line[i]) >= int(line[j]):
+            return False, count
+    return True, count
+
+
+def larger_than_up_side(lines, i, j):
+    count = 0
+    for index in reversed(range(i)):
+        count += 1
+        if int(lines[index][j]) >= int(lines[i][j]):
+            return False, count
+    return True, count
+
+
+def larger_than_down_side(lines, i, j):
+    count = 0
+    for index in range(i + 1, len(lines)):
+        count += 1
+        if int(lines[index][j]) >= int(lines[i][j]):
+            return False, count
+    return True, count
+
+
+def day8_part1():
+    lines = get_lines_from_file("day8_input.txt")
+    visible_trees = 2 * len(lines[0]) + 2 * (len(lines) - 2)
+    for i in range(1, len(lines) - 1):
+        for j in range(1, len(lines[i]) - 1):
+            if larger_than_left_side(lines[i], j)[0] or \
+                    larger_than_right_side(lines[i], j)[0] or \
+                    larger_than_up_side(lines, i, j)[0] or \
+                    larger_than_down_side(lines, i, j)[0]:
+                visible_trees += 1
+    print(visible_trees)
+
+
+def day8_part2():
+    lines = get_lines_from_file("day8_input.txt")
+    max_score = 0
+    for i in range(1, len(lines) - 1):
+        for j in range(1, len(lines[i]) - 1):
+            x = j
+            current_score = larger_than_left_side(lines[i], j)[1] * \
+                            larger_than_right_side(lines[i], j)[1] * \
+                            larger_than_up_side(lines, i, j)[1] * \
+                            larger_than_down_side(lines, i, j)[1]
+            max_score = max(max_score, current_score)
+    print(max_score)
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    day6_part2()
+    day8_part2()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
