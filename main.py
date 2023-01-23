@@ -1,4 +1,5 @@
 # This is a sample Python script.
+import numpy as np
 
 
 # Press Shift+F10 to execute it or replace it with your code.
@@ -423,8 +424,99 @@ def day8_part2():
     print(max_score)
 
 
+def head_is_to_the_right(head, tail):
+    return head[1] - tail[1] >= 1
+
+
+def head_is_to_the_left(head, tail):
+    return tail[1] - head[1] >= 1
+
+
+def head_is_to_the_top(head, tail):
+    return tail[0] - head[0] >= 1
+
+
+def head_is_to_the_bottom(head, tail):
+    return head[0] - tail[0] >= 1
+
+
+def adjust_tail(head, tail):
+    if head[0] - tail[0] > 1:
+        tail[0] += 1
+        if head_is_to_the_right(head, tail):
+            tail[1] += 1
+        elif head_is_to_the_left(head, tail):
+            tail[1] -= 1
+    elif tail[0] - head[0] > 1:
+        tail[0] -= 1
+        if head_is_to_the_right(head, tail):
+            tail[1] += 1
+        elif head_is_to_the_left(head, tail):
+            tail[1] -= 1
+    elif head[1] - tail[1] > 1:
+        tail[1] += 1
+        if head_is_to_the_top(head, tail):
+            tail[0] -= 1
+        elif head_is_to_the_bottom(head, tail):
+            tail[0] += 1
+    elif tail[1] - head[1] > 1:
+        tail[1] -= 1
+        if head_is_to_the_top(head, tail):
+            tail[0] -= 1
+        elif head_is_to_the_bottom(head, tail):
+            tail[0] += 1
+
+
+def day9_part1():
+    lines = get_lines_from_file("day9_input.txt")
+    visited = np.zeros((1000, 1000))
+    head, tail = [500, 500], [500, 500]
+    visited[500, 500] = 1
+    for line in lines:
+        direction, steps = line.split()
+        for step in range(int(steps)):
+            if direction == 'U':
+                head[0] -= 1
+            elif direction == 'D':
+                head[0] += 1
+            elif direction == 'L':
+                head[1] -= 1
+            else:
+                head[1] += 1
+            adjust_tail(head, tail)
+            visited[tail[0], tail[1]] = 1
+    print(np.count_nonzero(visited))
+
+
+def day9_part2():
+    lines = get_lines_from_file("day9_input.txt")
+    visited = np.zeros((1000, 1000))
+    head, tail = [500, 500], [[500, 500], [500, 500], [500, 500], [500, 500], [500, 500], [500, 500], [500, 500],
+                              [500, 500], [500, 500]]
+    visited[500, 500] = 1
+    for line in lines:
+        direction, steps = line.split()
+
+        for step in range(int(steps)):
+            if direction == 'U':
+                head[0] -= 1
+            elif direction == 'D':
+                head[0] += 1
+            elif direction == 'L':
+                head[1] -= 1
+            else:
+                head[1] += 1
+            adjust_tail(head, tail[0])
+
+            for i in range(1, len(tail)):
+                adjust_tail(tail[i - 1], tail[i])
+            visited[tail[8][0], tail[8][1]] = 1
+
+    print(np.count_nonzero(visited))
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    day8_part2()
+    day9_part2()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
