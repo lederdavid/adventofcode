@@ -515,8 +515,55 @@ def day9_part2():
     print(np.count_nonzero(visited))
 
 
+def add_cycle(cycle, x, sum_x):
+    cycle += 1
+    if (cycle + 20) % 40 == 0:
+        sum_x += x * cycle
+    return cycle, sum_x
+
+
+def day10_part1():
+    lines = get_lines_from_file("day10_input.txt")
+    cycle = 0
+    x = 1
+    sum_x = 0
+    for line in lines:
+        cycle, sum_x = add_cycle(cycle, x, sum_x)
+        if line.split()[0] == "addx":
+            number = int(line.split()[1])
+            cycle, sum_x = add_cycle(cycle, x, sum_x)
+            x += number
+    print(sum_x)
+
+
+def add_cycle_and_draw(cycle, sprite_position, crt):
+    cycle += 1
+    row_position = cycle % 40
+    if 0 <= row_position - sprite_position <= 2:
+        crt += "#"
+    else:
+        crt += "."
+    if row_position == 0:
+        crt += "\n"
+    return cycle, crt
+
+
+def day10_part2():
+    lines = get_lines_from_file("day10_input.txt")
+    cycle = 0
+    sprite_position = 1
+    crt = ""
+    for line in lines:
+        cycle, crt = add_cycle_and_draw(cycle, sprite_position, crt)
+        if line.split()[0] == "addx":
+            number = int(line.split()[1])
+            cycle, crt = add_cycle_and_draw(cycle, sprite_position, crt)
+            sprite_position += number
+    print(crt)
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    day9_part2()
+    day10_part2()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
