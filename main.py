@@ -1,5 +1,7 @@
 # This is a sample Python script.
 import numpy as np
+from collections import defaultdict
+import heapq as heap
 
 
 # Press Shift+F10 to execute it or replace it with your code.
@@ -562,8 +564,223 @@ def day10_part2():
     print(crt)
 
 
+class Monkey:
+    num_of_inspections = 0
+
+    def __init__(self, items, operation, test):
+        self.items = items
+        self.operation = operation
+        self.test = test
+
+    def add_item(self, item):
+        self.items.append(item)
+
+    def inspect_item(self, modulo):
+        self.num_of_inspections += 1
+        item = self.items.pop(0)
+        if "+" in self.operation:
+            operand = self.operation.split("+")[1].strip()
+            if operand == "old":
+                worry_level = item + item
+            else:
+                worry_level = item + int(operand)
+            if worry_level % self.test[0] == 0:
+                return worry_level, self.test[1]
+            else:
+                return worry_level, self.test[2]  # returns tuple of (worry_level, monkey #)
+        else:
+            operand = self.operation.split("*")[1].strip()
+            if operand == "old":
+                worry_level = item * item
+            else:
+                worry_level = item * int(operand)
+            if item % self.test[0] == 0:
+                return worry_level % modulo, self.test[1]
+            else:
+                return worry_level % modulo, self.test[2]  # returns tuple of (worry_level, monkey #)
+
+        # worry_level = int(worry_level / 3)  #part_1
+        # if worry_level % self.test[0] == 0:
+        #     return worry_level, self.test[1]
+        # else:
+        #     return worry_level, self.test[2]  # returns tuple of (worry_level, monkey #)
+
+
+def process_monkey(lines):
+    list_of_items = []
+    for item in lines[1].split(":")[1].split(","):
+        list_of_items.append(int(item.strip()))
+    operation = lines[2].split(":")[1]
+    test = (int(lines[3].split("by")[1].strip()), int(lines[4].split("monkey")[1].strip()),
+            int(lines[5].split("monkey")[1].strip()))
+    return Monkey(list_of_items, operation, test)
+
+
+def do_round(array_of_monkeys, modulo):
+    for i in range(len(array_of_monkeys)):
+        monkey = array_of_monkeys[i]
+        while len(monkey.items) > 0:
+            monkey_throw = monkey.inspect_item(modulo)
+            array_of_monkeys[monkey_throw[1]].add_item(monkey_throw[0])
+
+
+def day11_part1():
+    lines = get_lines_from_file("day11_input.txt")
+    array_of_monkeys = [None, None, None, None, None, None, None, None]
+    # lines = get_lines_from_file("day11_dummy.txt")
+    # array_of_monkeys = [None, None, None, None]
+    num_of_monkeys = len(array_of_monkeys)
+    j = 0
+    modulo = 1
+    for i in range(num_of_monkeys):
+        array_of_monkeys[i] = process_monkey(lines[j:j + 6])
+        modulo *= array_of_monkeys[i].test[0]
+        j += 7
+
+    for i in range(10000):
+        do_round(array_of_monkeys, modulo)
+
+    max_inspections1 = 0
+    max_inspections2 = 0
+    for i in range(num_of_monkeys):
+        inspections = array_of_monkeys[i].num_of_inspections
+        if inspections > max_inspections1:
+            max_inspections2 = max_inspections1
+            max_inspections1 = inspections
+        elif inspections > max_inspections2:
+            max_inspections2 = inspections
+
+    print(max_inspections1 * max_inspections2)
+
+
+def dijkstra(input_matrix, starting_node):
+    visited = set()
+    parents_map = {}
+    pq = []
+    node_costs = defaultdict(lambda: float('inf'))
+    node_costs[starting_node] = 0
+    heap.heappush(pq, (0, starting_node))
+
+    while pq:
+        # go greedily by always extending the shorter cost nodes first
+        _, node = heap.heappop(pq)
+        visited.add(node)
+
+        for adj_node in get_adjacent_nodes(input_matrix, node):
+            if adj_node in visited:
+                continue
+
+            new_cost = node_costs[node] + 1
+            if node_costs[adj_node] > new_cost:
+                parents_map[adj_node] = node
+                node_costs[adj_node] = new_cost
+                heap.heappush(pq, (new_cost, adj_node))
+
+    return parents_map, node_costs
+
+
+def get_adjacent_nodes(input_matrix, current_position):
+    result = []
+    my_cell = input_matrix[current_position]
+    if current_position[0] > 0:
+        new_position = (current_position[0] - 1, current_position[1])
+        new_cell = input_matrix[new_position]
+        if new_cell != 0 and new_cell <= my_cell + 1:
+            result.append(new_position)
+    if current_position[0] < input_matrix.shape[0] - 1:
+        new_position = (current_position[0] + 1, current_position[1])
+        new_cell = input_matrix[new_position]
+        if new_cell != 0 and new_cell <= my_cell + 1:
+            result.append(new_position)
+    if current_position[1] > 0:
+        new_position = (current_position[0], current_position[1] - 1)
+        new_cell = input_matrix[new_position]
+        if new_cell != 0 and new_cell <= my_cell + 1:
+            result.append(new_position)
+    if current_position[1] < input_matrix.shape[1] - 1:
+        new_position = (current_position[0], current_position[1] + 1)
+        new_cell = input_matrix[new_position]
+        if new_cell != 0 and new_cell <= my_cell + 1:
+            result.append(new_position)
+    return result
+
+
+def get_elevation(letter):
+    all_letters = "abcdefghijklmnopqrstuvwxyz"
+    return all_letters.index(letter)
+
+
+global_min = 100000000
+
+
+def find_shortest_path(input_matrix, current_position, target_position):
+    global global_min
+    my_cell = input_matrix[current_position]
+    my_matrix = input_matrix.copy()
+    my_matrix[current_position] = 0
+    # print(current_position)
+    if current_position != target_position:
+        if current_position[0] > 0:
+            new_position = (current_position[0] - 1, current_position[1])
+            new_cell = input_matrix[new_position]
+            if new_cell != 0 and new_cell <= my_cell + 1:
+                find_shortest_path(my_matrix, new_position, target_position)
+        if current_position[0] < input_matrix.shape[0] - 1:
+            new_position = (current_position[0] + 1, current_position[1])
+            new_cell = input_matrix[new_position]
+            if new_cell != 0 and new_cell <= my_cell + 1:
+                find_shortest_path(my_matrix, new_position, target_position)
+        if current_position[1] > 0:
+            new_position = (current_position[0], current_position[1] - 1)
+            new_cell = input_matrix[new_position]
+            if new_cell != 0 and new_cell <= my_cell + 1:
+                find_shortest_path(my_matrix, new_position, target_position)
+        if current_position[1] < input_matrix.shape[1] - 1:
+            new_position = (current_position[0], current_position[1] + 1)
+            new_cell = input_matrix[new_position]
+            if new_cell != 0 and new_cell <= my_cell + 1:
+                find_shortest_path(my_matrix, new_position, target_position)
+    else:
+        global_min = min(global_min, input_matrix.size - np.count_nonzero(input_matrix))
+        print(global_min)
+
+
+def day12():
+    lines = get_lines_from_file("day12_input.txt")
+    # lines = get_lines_from_file("day12_dummy.txt")
+    input_matrix = np.zeros((len(lines), len(lines[0])))
+    i = 0
+    current_position = (0, 0)
+    target_position = (0, 0)
+    for line in lines:
+        j = 0
+        for letter in line:
+            if letter == "S":
+                current_position = (i, j)
+                input_matrix[i, j] = get_elevation("a")
+            elif letter == "E":
+                target_position = (i, j)
+                input_matrix[i, j] = get_elevation("z")
+            else:
+                input_matrix[i, j] = get_elevation(letter)
+            j += 1
+        i += 1
+
+    # part1:
+    print(dijkstra(input_matrix, current_position)[1][target_position])
+
+    # part2:
+    min_steps = 10000000000000000
+    for i in range(input_matrix.shape[0]):
+        for j in range(input_matrix.shape[1]):
+            if input_matrix[i, j] == 0:
+                min_steps = min(min_steps, dijkstra(input_matrix, (i, j))[1][target_position])
+
+    print(min_steps)
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    day10_part2()
+    day12()
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
